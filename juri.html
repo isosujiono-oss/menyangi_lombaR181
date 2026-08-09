@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Penilaian Juri</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 450px;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        h2 {
+            text-align: center;
+            color: #1a252f;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        label {
+            font-weight: 600;
+            display: block;
+            margin-top: 15px;
+            color: #4a5568;
+            font-size: 0.9rem;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 6px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e0;
+            font-size: 0.95rem;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        select:focus, input:focus {
+            border-color: #3182ce;
+        }
+
+        .score-preview {
+            margin-top: 20px;
+            padding: 12px;
+            background: #e2e8f0;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: #2d3748;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: #3182ce;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            border: none;
+            border-radius: 8px;
+            margin-top: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:active {
+            background: #2b6cb0;
+        }
+
+        .status {
+            margin-top: 15px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <h2>PANEL JURI</h2>
+        
+        <label for="judge-select">Posisi Juri Anda:</label>
+        <select id="judge-select">
+            <option value="1">Juri 1</option>
+            <option value="2">Juri 2</option>
+            <option value="3">Juri 3</option>
+        </select>
+
+        <label for="participant-select">Pilih Peserta Tampil:</label>
+        <select id="participant-select" onchange="updateActiveParticipant()">
+            <option value="">-- Memuat Peserta --</option>
+        </select>
+
+        <!-- Kriteria Penilaian -->
+        <label for="score-suara">Suara & Intonasi (30%):</label>
+        <input type="number" id="score-suara" placeholder="50 - 100" min="50" max="100" oninput="calculateTotal()">
+
+        <label for="score-ekspresi">Penjiwaan & Ekspresi (35%):</label>
+        <input type="number" id="score-ekspresi" placeholder="50 - 100" min="50" max="100" oninput="calculateTotal()">
+
+        <label for="score-lirik">Penguasaan Lirik (15%):</label>
+        <input type="number" id="score-lirik" placeholder="50 - 100" min="50" max="100" oninput="calculateTotal()">
+
+        <label for="score-ritme">Ritme & Tempo (15%):</label>
+        <input type="number" id="score-ritme" placeholder="50 - 100" min="50" max="100" oninput="calculateTotal()">
+
+        <div class="score-preview">
+            Kalkulasi Nilai Akhir: <span id="final-score">0</span>
+        </div>
+
+        <button onclick="sendScore()">KIRIM NILAI</button>
+        <div id="status" class="status"></div>
+    </div>
+
+    <script>
+        const GAS_URL = "https://script.google.com/macros/s/AKfycbz0Mr5btYUdJa8PI-0KBMyVnsdOityAg4apxnLjjjdhoJtLESLI9r_bwVyBCAYx9eKp/exec";
+
+        function loadParticipants() {
+            if (GAS_URL === "URL_APPS_SCRIPT_ANDA_DI_SINI") return;
+
+            fetch(GAS_URL + "?action=getparticipants")
+                .then(res => res.json())
+                .then(data => {
+                    let html = '<option value="">-- Pilih Peserta --</option>';
+                    data.forEach(p => {
+                        html += `<option value="${p.row}">${p.id} - ${p.nama}</option>`;
+                    });
+                    document.getElementById('participant-select').innerHTML = html;
+                })
+                .catch(err => {
+                    document.getElementById('status').style.color = "red";
+                    document.getElementById('status').innerText = "Gagal memuat peserta!";
+                });
+        }
+
+        // Mengirim instruksi ke Apps Script agar Layar Panggung menampilkan peserta yang baru dipilih
+        function updateActiveParticipant() {
+            const row = document.getElementById('participant-select').value;
+            const statusDiv = document.getElementById('status');
+
+            if (!row) return;
+
+            statusDiv.style.color = "#3182ce";
+            statusDiv.innerText = "Menampilkan peserta di panggung...";
+
+            fetch(`${GAS_URL}?action=setactiveparticipant&row=${row}`)
+                .then(res => res.json())
+                .then(res => {
+                    if (res.status === "success") {
+                        statusDiv.style.color = "#38a169";
+                        statusDiv.innerText = "Peserta tampil di layar panggung!";
+                        setTimeout(() => statusDiv.innerText = "", 2000);
+                    }
+                })
+                .catch(err => {
+                    statusDiv.style.color = "#e53e3e";
+                    statusDiv.innerText = "Gagal memperbarui panggung!";
+                });
+        }
+
+        function calculateTotal() {
+            const suara = parseFloat(document.getElementById('score-suara').value) || 0;
+            const ekspresi = parseFloat(document.getElementById('score-ekspresi').value) || 0;
+            const lirik = parseFloat(document.getElementById('score-lirik').value) || 0;
+            const ritme = parseFloat(document.getElementById('score-ritme').value) || 0;
+
+            const finalScore = (suara * 0.30) + (ekspresi * 0.35) + (lirik * 0.15) + (ritme * 0.15);
+            document.getElementById('final-score').innerText = finalScore.toFixed(2);
+            return finalScore;
+        }
+
+        function sendScore() {
+            const judge = document.getElementById('judge-select').value;
+            const row = document.getElementById('participant-select').value;
+            
+            const suara = parseFloat(document.getElementById('score-suara').value);
+            const ekspresi = parseFloat(document.getElementById('score-ekspresi').value);
+            const lirik = parseFloat(document.getElementById('score-lirik').value);
+            const ritme = parseFloat(document.getElementById('score-ritme').value);
+            
+            const statusDiv = document.getElementById('status');
+
+            if (!row) {
+                alert("Pilih nama peserta!");
+                return;
+            }
+
+            // Validasi Rentang Nilai (50 - 100)
+            const scores = [suara, ekspresi, lirik, ritme];
+            const isValid = scores.every(s => !isNaN(s) && s >= 50 && s <= 100);
+
+            if (!isValid) {
+                alert("Harap isi semua kriteria nilai dengan rentang 50 - 100!");
+                return;
+            }
+
+            const totalScore = calculateTotal();
+
+            statusDiv.style.color = "#d69e2e";
+            statusDiv.innerText = "Mengirim nilai ke panggung...";
+
+            fetch(GAS_URL, {
+                method: "POST",
+                body: JSON.stringify({ 
+                    judge: judge, 
+                    row: row, 
+                    score: totalScore 
+                })
+            })
+            .then(res => res.json())
+            .then(res => {
+                statusDiv.style.color = "#38a169";
+                statusDiv.innerText = "Nilai Berhasil Terkirim!";
+                
+                // Reset input nilai
+                document.getElementById('score-suara').value = "";
+                document.getElementById('score-ekspresi').value = "";
+                document.getElementById('score-lirik').value = "";
+                document.getElementById('score-ritme').value = "";
+                document.getElementById('final-score').innerText = "0";
+
+                setTimeout(() => statusDiv.innerText = "", 3000);
+            })
+            .catch(err => {
+                statusDiv.style.color = "#e53e3e";
+                statusDiv.innerText = "Gagal mengirim nilai!";
+            });
+        }
+
+        loadParticipants();
+    </script>
+</body>
+</html>

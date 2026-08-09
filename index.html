@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panggung Utama - Lomba Kemerdekaan</title>
+    <!-- Pustaka Efek Confetti / Kembang Api Kertas -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-red: #e31d1c;
+            --accent-gold: #ffd700;
+            --text-light: #ffffff;
+            --text-dark: #222222;
+            --card-bg: rgba(255, 255, 255, 0.96);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at center, #b22222 0%, #4a0000 100%);
+            color: var(--text-dark);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- 1. ORNAMEN BINGKAI PANGGUNG --- */
+        /* Tirai Atas */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background: radial-gradient(circle at 50% 0%, #ff4d4d 0%, var(--primary-red) 70%, #8b0000 100%);
+            border-bottom: 4px solid var(--accent-gold);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            z-index: 10;
+        }
+
+        /* Tirai Samping Kiri & Kanan */
+        .curtain-left, .curtain-right {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            width: 50px;
+            background: linear-gradient(to right, #4a0000, var(--primary-red), #8b0000, #4a0000);
+            box-shadow: 0 0 25px rgba(0,0,0,0.8);
+            z-index: 9;
+            pointer-events: none;
+        }
+        .curtain-left { left: 0; border-right: 4px solid var(--accent-gold); border-radius: 0 15px 15px 0; }
+        .curtain-right { right: 0; border-left: 4px solid var(--accent-gold); border-radius: 15px 0 0 15px; }
+
+        .curtain-left::after, .curtain-right::after {
+            content: "🎗️";
+            position: absolute;
+            top: 45%;
+            font-size: 1.5rem;
+        }
+        .curtain-left::after { right: -10px; }
+        .curtain-right::after { left: -10px; }
+
+        /* Lis Lantai Panggung */
+        .stage-floor {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: linear-gradient(to top, #2b1704, #5c3a21, #8d5b34);
+            border-top: 3px solid var(--accent-gold);
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        /* Bendera Gantung */
+        .bunting-flags {
+            position: absolute;
+            top: 55px;
+            left: 0;
+            width: 100%;
+            height: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 20" preserveAspectRatio="none"><polygon points="0,0 10,0 5,10" fill="%23e31d1c"/><polygon points="10,0 20,0 15,10" fill="%23fff"/><polygon points="20,0 30,0 25,10" fill="%23e31d1c"/><polygon points="30,0 40,0 35,10" fill="%23fff"/><polygon points="40,0 50,0 45,10" fill="%23e31d1c"/><polygon points="50,0 60,0 55,10" fill="%23fff"/><polygon points="60,0 70,0 65,10" fill="%23e31d1c"/><polygon points="70,0 80,0 75,10" fill="%23fff"/><polygon points="80,0 90,0 85,10" fill="%23e31d1c"/><polygon points="90,0 100,0 95,10" fill="%23fff"/></svg>');
+            background-repeat: repeat-x;
+            background-size: 50px 25px;
+            z-index: 8;
+            opacity: 0.9;
+        }
+
+        /* Lampu Sorot */
+        .spotlight {
+            position: absolute;
+            top: -50px;
+            width: 300px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 70%);
+            filter: blur(20px);
+            z-index: 1;
+            pointer-events: none;
+        }
+        .spotlight.left { left: 15%; transform: rotate(-20deg); animation: swayLeft 8s infinite alternate ease-in-out; }
+        .spotlight.right { right: 15%; transform: rotate(20deg); animation: swayRight 8s infinite alternate ease-in-out; }
+
+        /* --- 2. HEADER JUDUL --- */
+        header {
+            text-align: center;
+            margin-top: 50px;
+            margin-bottom: 25px;
+            z-index: 8;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 2.6rem;
+            color: var(--text-light);
+            letter-spacing: 2px;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.6);
+            text-transform: uppercase;
+            font-weight: 900;
+            background: linear-gradient(to bottom, #ffffff, #ffe6e6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* --- 3. KONTEN PESERTA & SKOR --- */
+        .stage-container {
+            width: 100%;
+            max-width: 780px;
+            background: var(--card-bg);
+            border-radius: 25px;
+            padding: 40px 25px 25px 25px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            border: 4px solid var(--accent-gold);
+            outline: 6px solid var(--primary-red);
+            text-align: center;
+            position: relative;
+            z-index: 5;
+            margin-bottom: 20px;
+        }
+
+        .profile-img {
+            width: 170px;
+            height: 170px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #ffffff;
+            box-shadow: 0 0 25px rgba(227, 29, 28, 0.5), 0 8px 20px rgba(0,0,0,0.3);
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .contestant-name {
+            font-size: 2.4rem;
+            font-weight: 900;
+            color: var(--primary-red);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 0 #fff;
+            line-height: 1.1;
+        }
+
+        .contestant-info {
+            font-size: 1.2rem;
+            color: #444;
+            font-weight: 700;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .judges-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .judge-card {
+            background: #ffffff;
+            padding: 10px 20px;
+            border-radius: 15px;
+            border: 2px solid #e0e0e0;
+            min-width: 110px;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.06);
+        }
+
+        .judge-label {
+            font-size: 0.85rem;
+            color: var(--primary-red);
+            text-transform: uppercase;
+            font-weight: 800;
+            margin-bottom: 5px;
+        }
+
+        .judge-score {
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: var(--text-dark);
+            line-height: 1;
+        }
+
+        .total-box {
+            background: linear-gradient(135deg, var(--primary-red) 0%, #990000 100%);
+            padding: 12px 40px;
+            border-radius: 18px;
+            display: inline-block;
+            box-shadow: 0 10px 25px rgba(153, 0, 0, 0.5);
+            border: 3px solid var(--accent-gold);
+            position: relative;
+        }
+        
+        .total-box::before {
+            content: "🏆";
+            position: absolute;
+            top: -18px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 1.5rem;
+        }
+
+        .total-title {
+            font-size: 1rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+        }
+
+        .total-score {
+            font-size: 3.8rem;
+            font-weight: 900;
+            color: var(--text-light);
+            line-height: 1;
+        }
+
+        /* --- 4. BANNER SURPRISE POPUP --- */
+        .surprise-banner {
+            position: absolute;
+            top: -24px;
+            left: 50%;
+            transform: translateX(-50%) scale(0);
+            background: linear-gradient(90deg, var(--primary-red), #ffffff, var(--primary-red));
+            background-size: 200% auto;
+            color: #000;
+            padding: 8px 25px;
+            border-radius: 50px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 20;
+            white-space: nowrap;
+            border: 3px solid var(--accent-gold);
+        }
+
+        .surprise-banner.show {
+            transform: translateX(-50%) scale(1);
+            animation: shinePita 3s linear infinite;
+        }
+
+        @keyframes shinePita {
+            0% { background-position: 200% center; color: #fff; }
+            50% { color: var(--primary-red); }
+            100% { background-position: 0% center; color: #fff; }
+        }
+
+        @keyframes swayLeft {
+            from { transform: rotate(-15deg); }
+            to { transform: rotate(-25deg); }
+        }
+        @keyframes swayRight {
+            from { transform: rotate(15deg); }
+            to { transform: rotate(25deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- AKSESORIS BINGKAI PANGGUNG -->
+    <div class="curtain-left"></div>
+    <div class="curtain-right"></div>
+    <div class="bunting-flags"></div>
+    <div class="stage-floor"></div>
+
+    <!-- LAMPU SOROT -->
+    <div class="spotlight left"></div>
+    <div class="spotlight right"></div>
+
+    <header>
+        <h1>GEBYAR LOMBA KEMERDEKAAN</h1>
+    </header>
+
+    <div class="stage-container">
+        <!-- Banner Popup Ucapan Selamat -->
+        <div id="surprise-text" class="surprise-banner">🇮🇩 MERDEKA! PENAMPILAN HEBAT! 🇮🇩</div>
+
+        <img id="display-photo" class="profile-img" src="https://via.placeholder.com/170?text=Foto" alt="foto peserta">
+        <div id="display-name" class="contestant-name">memuat data...</div>
+        <div id="display-school" class="contestant-info">-</div>
+
+        <div class="judges-container">
+            <div class="judge-card">
+                <div class="judge-label">juri 1</div>
+                <div id="score-j1" class="judge-score">0</div>
+            </div>
+            <div class="judge-card">
+                <div class="judge-label">juri 2</div>
+                <div id="score-j2" class="judge-score">0</div>
+            </div>
+            <div class="judge-card">
+                <div class="judge-label">juri 3</div>
+                <div id="score-j3" class="judge-score">0</div>
+            </div>
+        </div>
+
+        <div class="total-box">
+            <div class="total-title">total skor</div>
+            <div id="display-total" class="total-score">0</div>
+        </div>
+    </div>
+
+    <script>
+        const gas_url = "https://script.google.com/macros/s/AKfycbz0Mr5btYUdJa8PI-0KBMyVnsdOityAg4apxnLjjjdhoJtLESLI9r_bwVyBCAYx9eKp/exec";
+
+        let current_participant_row = null;
+        let last_total_score = 0;
+
+        function triggerSurprise() {
+            const surpriseBanner = document.getElementById('surprise-text');
+            surpriseBanner.classList.add('show');
+
+            const count = 250;
+            const defaults = { origin: { y: 0.6 } };
+
+            function fire(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(count * particleRatio),
+                    colors: ['#e31d1c', '#ffffff', '#ffd700']
+                }));
+            }
+
+            fire(0.25, { spread: 30, startVelocity: 60 });
+            fire(0.2, { spread: 70 });
+            fire(0.35, { spread: 120, decay: 0.91, scalar: 0.8 });
+            fire(0.1, { spread: 150, startVelocity: 30, decay: 0.92, scalar: 1.3 });
+            fire(0.1, { spread: 150, startVelocity: 55 });
+
+            setTimeout(() => {
+                surpriseBanner.classList.remove('show');
+            }, 4500);
+        }
+
+        function updatestage() {
+            if (gas_url === "URL_APPS_SCRIPT_ANDA_DI_SINI") return;
+
+            fetch(gas_url + "?action=getstagedata")
+                .then(res => res.json())
+                .then(data => {
+                    document.getElementById('display-name').innerText = data.nama || "Nama Peserta";
+                    document.getElementById('display-school').innerText = data.sekolah || "Asal Sekolah";
+                    
+                    if (data.foto && data.foto !== "") {
+                        document.getElementById('display-photo').src = data.foto;
+                    } else {
+                         document.getElementById('display-photo').src = "https://via.placeholder.com/170?text=Tanpa+Foto";
+                    }
+
+                    document.getElementById('score-j1').innerText = Number(data.juri1).toFixed(1);
+                    document.getElementById('score-j2').innerText = Number(data.juri2).toFixed(1);
+                    document.getElementById('score-j3').innerText = Number(data.juri3).toFixed(1);
+                    document.getElementById('display-total').innerText = Number(data.total).toFixed(1);
+
+                    // Pemicu selebrasi confetti jika ada perubahan total skor
+                    if (data.row !== current_participant_row) {
+                        current_participant_row = data.row;
+                        last_total_score = data.total;
+                        if (data.total > 0) {
+                            triggerSurprise();
+                        }
+                    } else if (data.total > last_total_score) {
+                        last_total_score = data.total;
+                        triggerSurprise();
+                    }
+                })
+                .catch(err => console.log("Gagal sinkronisasi data panggung:", err));
+        }
+
+        setInterval(updatestage, 1000);
+        updatestage();
+    </script>
+</body>
+</html>
